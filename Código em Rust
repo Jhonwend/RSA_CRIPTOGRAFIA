@@ -1,0 +1,55 @@
+use num_bigint::{BigUint, BigInt, ToBigUint, ToBigInt};
+use num_traits::{Zero, One, ToPrimitive};
+
+fn modinv(a: &BigUint, m: &BigUint) -> BigUint {
+    let mut mn = (m.to_bigint().unwrap(), a.to_bigint().unwrap());
+    let mut xy = (BigInt::zero(), BigInt::one());
+
+    while mn.1 != BigInt::zero() {
+        let q = &mn.0 / &mn.1;
+        mn = (mn.1.clone(), &mn.0 - &q * &mn.1);
+        xy = (xy.1.clone(), &xy.0 - &q * &xy.1);
+    }
+
+    while xy.0 < BigInt::zero() {
+        xy.0 += m.to_bigint().unwrap();
+    }
+
+    xy.0.to_biguint().unwrap()
+}
+
+fn main() {
+    let p = 61u32.to_biguint().unwrap();
+    let q = 53u32.to_biguint().unwrap();
+    let n = &p * &q; // 3233
+    let phi = (&p - 1u32) * (&q - 1u32); // 3120
+    let e = 17u32.to_biguint().unwrap();
+    let d = modinv(&e, &phi);
+
+    let msg = "Olá, Jonathan!";
+    println!("Mensagem original: {}", msg);
+
+    // Criptografar caractere por caractere
+    let mut encrypted = Vec::new();
+    for byte in msg.bytes() {
+        let m = BigUint::from(byte);
+        let c = m.modpow(&e, &n);
+        encrypted.push(c);
+    }
+
+    println!("Criptografado:");
+    for c in &encrypted {
+        print!("{} ", c);
+    }
+    println!();
+
+    // Descriptografar
+    let mut decrypted = Vec::new();
+    for c in &encrypted {
+        let m = c.modpow(&d, &n);
+        decrypted.push(m.to_u8().unwrap());
+    }
+
+    let result = String::from_utf8(decrypted).unwrap();
+    println!("Descriptografado: {}", result);
+}
